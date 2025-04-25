@@ -2,37 +2,21 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
+        stage('Clone Repo') {
             steps {
-                echo 'Running build automation'
-                sh './gradlew build --no-daemon'
-                archiveArtifacts artifacts: 'dist/trainSchedule.zip'
+                git 'https://github.com/your-username/your-repo.git'
             }
         }
 
         stage('Build Docker Image') {
-            when {
-                branch 'master'
-            }
             steps {
-                script {
-                    app = docker.build("${DOCKER_HUB_USERNAME}/train-schedule")
-                    sh 'echo $(curl localhost:8080)'
-                }
+                sh 'docker build -t my-app:latest .'
             }
         }
 
-        stage('Push Docker Image') {
-            when {
-                branch 'master'
-            }
+        stage('Run Docker Container') {
             steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_login') {
-                        app.push("${env.BUILD_NUMBER}")
-                        app.push("latest")
-                    }
-                }
+                sh 'docker run -d -p 8080:80 --name my-container my-app:latest'
             }
         }
     }
